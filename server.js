@@ -54,13 +54,14 @@ io.on('connect', function(socket) {
         }
         break
 
-      case 'call':
-        // var conn = allSockets[data.connectedUser]
+      case 'call': {
+        const conn = allSockets[data.connectedUser]
         sendTo(conn, {
           event: 'call',
           name: socket.name
         })
         break
+      }
 
       case 'offer': {
         // for example: UserA wants to call UserB

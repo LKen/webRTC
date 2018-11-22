@@ -12,7 +12,7 @@
               </div>
           </div>
       </div>
-      <div class="container text-center" v-show="! show">
+      <div class="container text-center" v-show="!show">
           <div class="row">
               <div class="col-md-3" style="height: 50%">
                   <ul class="list-group">
@@ -29,7 +29,7 @@
                       <div class="col-md-12">
                           <input class="form-control" type="text" v-model="call_username" placeholder="username to call"/>
                           <br>
-                          <button class="btn-success btn" :disabled="!users[user_name]" @click="call">Call</button>
+                          <button class="btn-success btn" :disabled="!users[user_name]" @click="callTo">Call</button>
                           <button class="btn-danger btn" :disabled="users[user_name]" @click="hangUp">Hang Up</button>
                       </div>
                   </div>
@@ -61,12 +61,11 @@ import io from 'socket.io-client'
 
 window.RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection
 window.RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate || window.webkitRTCIceCandidate
-window.RTCSessionDescription =
-  window.RTCSessionDescription || window.mozRTCSessionDescription || window.webkitRTCSessionDescription
+window.RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription || window.webkitRTCSessionDescription
 
 let localStream
 var peerConn
-var connectedUser = null
+var connectedUser = null // 被呼叫的名单
 var configuration = {
   iceServers: [
     {
@@ -81,13 +80,13 @@ export default {
   data() {
     return {
       socket: null,
-      user_name: '',
-      show: true,
-      users: '',
-      call_username: '',
-      local_video: '',
-      remote_video: '',
-      accept_video: false,
+      user_name: '', // 用户名称
+      show: true, // 是否显示聊天室登录入口
+      users: '', // 在线的用户
+      call_username: '', // 输入框：被呼叫的人
+      local_video: '', // 本地视频链接
+      remote_video: '', // 远程视频链接
+      accept_video: false, // 收到来电
       local_srcObject: null
     }
   },
@@ -253,14 +252,14 @@ export default {
           })
       }
     },
-    call() {
+    callTo() {
       if (this.call_username.length > 0) {
         if (this.users[this.call_username] === true) {
           connectedUser = this.call_username
-          this.createConnection()
           this.send({
             event: 'call'
           })
+          this.createConnection()
         } else {
           alert('The current user is calling, try another')
         }
