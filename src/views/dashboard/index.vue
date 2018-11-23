@@ -9,6 +9,10 @@
       <div class="webrtc-register__body">
         <div class="center">
           <span class="label">机器人视频聊天室</span>
+          <div>
+            <md-input class="username" type="text" icon="service" name="title" placeholder="" v-model="username">用户名称</md-input>
+            <i class="el-icon-back registered"></i>
+          </div>
         </div>
       </div>
     </div>
@@ -17,11 +21,16 @@
 </template>
 
 <script>
+import MdInput from '@/components/MDinput'
 export default {
   name: 'Dashboard',
+  components: {
+    MdInput
+  },
   data() {
     return {
-      isRegistered: false
+      isRegistered: false,
+      username: ''
     }
   },
   created() {},
@@ -102,9 +111,46 @@ $btn-primary--focus: #55efd5;
         text-align: center;
         .label {
           position: relative;
+          display: block;
+          padding-bottom: 15px;
           -webkit-font-smoothing: antialiased; 
-          font-size: 2.3rem;
+          font-size: 2.6rem;
           font-family: "Microsoft YaHei","Hiragino Sans GB","PingFang SC","SimHei","宋体","Arial Unicode MS";
+        }
+        /deep/ .username {
+          display: inline-block;
+          width: 68.333%;
+          margin: 76px auto 0;
+          .material-input__icon {
+            height: 30px;
+            padding-bottom: 6px;
+            font-size: 18px;
+          }
+          .material-input {
+            font-size: 16px;
+            padding-bottom: 6px;
+            color: #333;
+          }
+          .material-label {
+            top: 14px;
+            left: 40px;
+          }
+          &.material--raised {
+            .material-label {
+              top: -28px;
+              left: 0;
+            }
+          }
+        }
+        .registered {
+          margin-left: 15px;
+          transform: rotate(180deg);
+          padding: 6px;
+          border-radius: 5px;
+          box-shadow: -1px -1px 3px rgba(0, 0, 0, 0.29);
+          &:active {
+            box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.77);
+          }
         }
       }
     }
