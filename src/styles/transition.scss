@@ -44,3 +44,12 @@
 .breadcrumb-leave-active {
   position: absolute;
 }
+
+.collapse-transform-enter-active,
+.collapse-transform-leave-active {
+  transition: transform .6s linear;
+}
+.collapse-transform-enter,
+.collapse-transform-leave-to {
+  transform: translateY(-100%)
+}
