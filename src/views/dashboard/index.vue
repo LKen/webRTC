@@ -33,7 +33,7 @@
         <span class="top-menuItem top-menu__text">欢迎，<label>{{ username }}</label></span>
         <div class="top-menuItem top-menu__select">
           <span class="label">在线用户：</span>
-          <el-select v-model="selectedName" filterable placeholder="请选择" @change="handleSelectName">
+          <el-select :disabled="disabledSelect" v-model="selectedName" filterable placeholder="请选择" @change="handleSelectName">
             <el-option
               v-for="item in options"
               :key="item.value"
@@ -43,22 +43,34 @@
           </el-select>
         </div>
         <span class="top-menuItem top-menu__icon">
-          <svg-icon :icon-class="computedStatusOfPhone" :className="'is-' + computedStatusOfPhone"></svg-icon>
+          <svg-icon :icon-class="computedStatusOfPhone" :className="'is-' + computedStatusOfPhone" @click.native="handlePhoneStatus"></svg-icon>
         </span>
+
+        <span v-show="connectedName" class="top-menuItem top-menu__text">正在通话的用户：<q><b>{{ connectedName }}</b></q></span>
       </div>
     </div>
 
     <el-dialog
       custom-class="webrtc-receive"
-      title="提示"
+      title="来电提示"
       :visible.sync="isRing"
+      :close-on-click-modal="false"
       :modal="false"
-      width="30%"
+      width="360px"
       center>
-      <span>需要注意的是内容是默认不居中的</span>
+
+      <div class="avatar-wrapper">
+        <div class="avatar">
+          <svg-icon v-if="!otherInfo.avatar" icon-class="user"></svg-icon>
+          <img v-else :src="otherInfo.avatar" alt="">
+        </div>
+      </div>
+      <p class="othername">{{ otherInfo.name }}</p>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="isRing = false">取 消</el-button>
-        <el-button type="primary" @click="handlePhoneReceive">确 定</el-button>
+        <svg-icon icon-class="phone_ring" className="is-phone_ring" @click.native="handlePhoneReceive"></svg-icon>
+        <svg-icon icon-class="phone_off" className="is-phone_off" @click.native="isRing = false"></svg-icon>
+        <!-- <el-button @click="isRing = false">取 消</el-button> -->
+        <!-- <el-button type="primary" @click="handlePhoneReceive">确 定</el-button> -->
       </span>
     </el-dialog>
   </div>
@@ -70,6 +82,7 @@ import MdInput from '@/components/MDinput'
 const CALL = 1
 const CALLING = 2
 const RING = 3
+const HANGUP = 4
 
 export default {
   name: 'Dashboard',
@@ -81,6 +94,7 @@ export default {
       isRegistered: true,
       username: 'KLEN',
       isPopover: false,
+      disabledSelect: false,
       statusOfPhone: 1,
       isRing: true,
       options: [{
@@ -99,7 +113,12 @@ export default {
         value: '选项5',
         label: '北京烤鸭'
       }],
-      selectedName: ''
+      otherInfo: {
+        name: '有一个可爱的人',
+        avatar: ''
+      },
+      selectedName: '',
+      connectedName: ''
     }
   },
   created() {},
@@ -130,9 +149,54 @@ export default {
      * 处理电话接受
      */
     handlePhoneReceive(event) {
-      console.log(event)
+      this.statusOfPhone = 3
+      this.handlePhoneStatus()
+    },
+    /**
+     * 处理事件：phone 状态事件
+     */
+    handlePhoneStatus() {
+      const { statusOfPhone } = this
+      switch (statusOfPhone) {
+        case CALL:
+          this.handleCall()
+          break
+        case RING:
+          this.handleRing()
+          break
+        case HANGUP:
+          this.handleHandup()
+          break
+      }
+    },
+    /**
+     * call
+     */
+    handleCall() {
+      console.log('call')
+      this.disabledSelect = true
+      this.statusOfPhone = 2
+    },
+    /**
+     * ring
+     */
+    handleRing() {
+      console.log('ring')
+      this.isRing = false
+      this.disabledSelect = true
+      this.connectedName = this.otherInfo.name
+      this.statusOfPhone = 4
+    },
+    /**
+     * ring
+     */
+    handleHandup() {
+      console.log('hangup')
+      this.disabledSelect = false
+      this.statusOfPhone = 1
     }
   },
+
   computed: {
     computedStatusOfPhone() {
       const { statusOfPhone } = this
@@ -170,6 +234,17 @@ $--color-primary: rgb(10, 171, 192);
   bottom: 0;
   top: 0;
   overflow: hidden;
+}
+%svg {
+  padding: 6px;
+  width: 30px;
+  height: 30px;
+  vertical-align: middle;
+  border-radius: 5px;
+  fill: #feffff !important;
+  user-select: none;
+  cursor: pointer;
+  transition: all .3s linear;
 }
 .webrtc-container {
   position: relative;
@@ -225,7 +300,7 @@ $--color-primary: rgb(10, 171, 192);
           position: relative;
           display: block;
           padding-bottom: 15px;
-          -webkit-font-smoothing: antialiased; 
+          -webkit-font-smoothing: antialiased;
           font-size: 2.6rem;
           font-family: "Microsoft YaHei","Hiragino Sans GB","PingFang SC","SimHei","宋体","Arial Unicode MS";
         }
@@ -307,40 +382,9 @@ $--color-primary: rgb(10, 171, 192);
       }
       .top-menu__icon {
         margin-left: 25px;
+        margin-right: 60px;
         & > svg {
-          padding: 6px;
-          width: 30px;
-          height: 30px;
-          vertical-align: middle;
-          border-radius: 5px;
-          fill: #feffff !important;
-          user-select: none;
-          cursor: pointer;
-          transition: all .3 linear;
-        }
-        // 未拨打
-        .is-phone_call {
-          background: $--color-success;
-          &:hover {
-            animation: shake .2s infinite;
-          }
-        }
-        // 拨打中
-        .is-phone_calling {
-          background: $--color-primary;
-          // animation: scale .6s infinite;
-        }
-        // 响铃中
-        .is-phone_ring {
-          background: $--color-warning;
-        }
-        // 通话中
-        .is-phone_off {
-          background: $--color-danger;
-          &:hover {
-            transform: scale(1.1)
-            
-          }
+          @extend %svg;
         }
       }
     }
@@ -349,6 +393,78 @@ $--color-primary: rgb(10, 171, 192);
     margin-top: 0 !important; // 修改dialog样式
     top: 50%;
     transform: translateY(-50%);
+    .avatar-wrapper {
+      display: inline-block;
+      position: relative;
+      width: 72px;
+      padding: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      line-height: 0;
+      font-size: 0;
+      overflow: hidden;
+      border: 1px solid #606266;
+      border-radius: 100%;
+      .avatar {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+        svg, img {
+          position: absolute;
+          top: 0;
+          width: 100%
+        }
+        svg {
+          height: 100%;
+        }
+        &::after {
+          content: '';
+          display: block;
+          margin-top: 100%; //margin 百分比相对父元素宽度计算
+        }
+      }
+    }
+    .othername {
+      text-align: center;
+      font-size: 24px;
+      color: #000;
+      margin-top: 40px;
+    }
+    .dialog-footer {
+      svg {
+        @extend %svg;
+        width: 40px;
+        height: 40px;
+        padding: 8px;
+        margin: 0 15px;
+      }
+
+    }
+  }
+}
+
+// 未拨打
+.is-phone_call {
+  background: $--color-success;
+  &:hover {
+    animation: shake .2s infinite;
+  }
+}
+// 拨打中
+.is-phone_calling {
+  background: $--color-primary;
+  // animation: scale .6s infinite;
+}
+// 响铃中
+.is-phone_ring {
+  background: $--color-success;
+  animation: shake .2s infinite;
+}
+// 通话中
+.is-phone_off {
+  background: $--color-danger;
+  &:hover {
+    transform: scale(1.1)
   }
 }
 
@@ -363,27 +479,27 @@ $--color-primary: rgb(10, 171, 192);
     transform: rotate(0deg)
   }
   25% {
-    transform: rotate(30deg)
+    transform: rotate(25deg)
   }
   50% {
     transform: rotate(0deg)
   }
   75% {
-    transform: rotate(-30deg)
+    transform: rotate(-25deg)
   }
   100% {
     transform: rotate(0deg)
-  }  
+  }
 }
 @keyframes scale {
   0% {
     transform: scale(1)
   }
-  
+
   50% {
     transform: scale(1.2)
   }
-  
+
   100% {
     transform: scale(1)
   }
