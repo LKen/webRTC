@@ -8,7 +8,8 @@ const pc = new RTCPeerConnection(configuration)
 // send any ice candidates to the other peer
 pc.onicecandidate = ({ candidate }) => signaling.send({ candidate })
 
-// let the "negotiationneeded" event trigger offer generation
+// let the "negotiationneeded" event trigger offer generation 
+// 该函数negotiationneeded在RTCPeerConnection实例上发生时被调用以处理该事件。发生需要会话协商的更改时会触发此事件。此协商应作为提议者进行，因为某些会话更改无法作为回答者进行协商
 pc.onnegotiationneeded = async() => {
   try {
     // createOffer The return from this of this is passed an RTCSessionDescription
