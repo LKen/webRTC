@@ -39,3 +39,19 @@ router.beforeEach((to, from, next) => {
 router.afterEach(() => {
   NProgress.done() // 结束Progress
 })
+
+/* ************************************* */
+/* compatibility with IE to manually change href non-responsive BUG
+/* ************************************* */
+if (
+  '-ms-scroll-limit' in document.documentElement.style &&
+  '-ms-ime-align' in document.documentElement.style
+) { // detect it's IE11
+  window.addEventListener('hashchange', function(event) {
+    var currentPath = window.location.hash.slice(1)
+    console.log(currentPath)
+    if (store.getters.currentPath !== currentPath) {
+      router.push(currentPath)
+    }
+  }, false)
+}

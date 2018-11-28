@@ -87,9 +87,15 @@ export default {
     window.addEventListener('resize', el.__resizeHanlder)
 
     function adjust() {
+      const ratio = 320 / 240
+      const width = window.innerWidth * 0.25 < 160 ? 160
+        : window.innerWidth * 0.25 > 320 ? 320
+          : window.innerWidth * 0.25
+      const height = width / ratio < 120 ? 120
+        : width / ratio > 320 ? 320
+          : width / ratio
       const pwidth = parentDom.clientWidth
-      const { width } = dragDom.getBoundingClientRect()
-      dragDom.style.cssText += `;top:0px;left:${pwidth - width}px`
+      dragDom.style.cssText += `;top:0px;left:${pwidth - width}px;width:${width}px;height:${height}px`
     }
   },
   unbind(el) {

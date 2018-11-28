@@ -12,7 +12,7 @@ var IO = require('socket.io')
 
 app.use(express.static('dist'))
 
-var server = http.createServer(app).listen(8080)
+var server = http.createServer(app).listen(2100)
 console.log('The HTTPS server is up and running')
 
 var io = IO(server)
@@ -183,5 +183,9 @@ function showUserInfo(allUsers) {
 }
 
 function sendTo(connection, message) {
-  connection.send(message)
+  try {
+    connection.send(message)
+  } catch (e) {
+    console.log(e)
+  }
 }
