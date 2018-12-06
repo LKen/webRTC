@@ -27,6 +27,12 @@ export const constantRouterMap = [
     component: () => import('@/views/dashboard/index')
   },
 
+  {
+    path: '/test',
+    name: 'test',
+    component: () => import('@/views/test/index')
+  },
+
   { path: '*', redirect: '/404', hidden: true }
 ]
 

@@ -9,7 +9,7 @@ const debug = require('debug')('webrtcbug:server')
 const http = require('http')
 const chalk = require('chalk')
 
-const webrtc = require('../server/controller/socket')
+const socket = require('../server/controller/socket')
 
 /**
  * Get port from environment and store in Express.
@@ -24,7 +24,7 @@ const port = normalizePort(process.env.PORT || 2100)
 
 const server = http.createServer(app.callback())
 
-webrtc(server)
+socket(server)
 
 /**
  * Listen on provided port, on all network interfaces.
