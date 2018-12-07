@@ -17,7 +17,7 @@ export default {
     this.socket = io.connect(url, {
       timeout: 5000,
       query: {
-        nae: '123'
+        name: '1212333'
       }
     })
     this.socket.on('message', (data) => {
@@ -33,23 +33,25 @@ export default {
         duration: 1500
       })
     })
-    this.socket.on('connect_error', (err) => {
+    this.socket.on('connect_error', () => {
       this.$notify({
         title: 'Socket.io',
         message: 'IO连接错误',
         type: 'error',
         duration: 1500
       })
-      console.log(err)
-    })
-    this.socket.on('connect_timeout', (err) => {
-      console.log(err)
     })
     this.socket.on('connect_timeout', (err) => {
       console.log(err)
     })
     this.socket.on('error', (err) => {
       console.log(err)
+      this.$notify({
+        title: 'Socket.io',
+        message: err,
+        type: 'error',
+        duration: 1500
+      })
     })
 
     this.socket.on('disconnect', (reason) => {
