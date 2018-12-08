@@ -4,9 +4,15 @@
 const IO = require('socket.io')
 const WebrtcUer = require('../webrtc/user')
 const Queue = require('../webrtc/queue')
-const chalk = require('chalk')
+const Room = require('../webrtc/room')
 
 const queueInstance = new Queue()
+const roomInstance = new Room()
+
+// 通话错误状态码
+const RTCTYPE_5001 = 5001 // 用户正在通话
+const RTCTYPE_5002 = 5002 // 对方已挂断
+const RTCTYPE_5003 = 5003 // 对方不存在
 
 const eventType = {
   offer: Symbol('offer'), // 代理转发
@@ -18,30 +24,96 @@ const eventType = {
   leave: Symbol('leave') // 代理转发
 }
 
-function handleMessage(type, data) {
+function handleMessage(type, data, socket) {
+  if (typeof data === 'undefined') {
+    throw new SyntaxError('(handleMessage) Arguments Error: missing second param')
+  }
   switch (type) {
     case eventType.offer:
-      console.log(data)
+      handleOffer.bind(this, socket)(data)
       break
     case eventType.answer:
-      console.log(data)
+      handleAnswer.bind(this, socket)(data)
       break
     case eventType.candidate:
-      console.log(data)
+      handleCandidate.bind(this, socket)(data)
       break
     case eventType.call:
-      console.log(data)
+      handleCall.bind(this, socket)(data)
       break
     case eventType.accept:
-      console.log(data)
+      handleAccept.bind(this, socket)(data)
       break
     case eventType.reject:
-      console.log(data)
+      handleReject.bind(this, socket)(data)
       break
     case eventType.leave:
-      console.log(data)
+      handleLeave.bind(this, socket)(data)
       break
   }
+}
+
+function handleUpdate() {
+  // If you just want the WebSocket semantics, you can do that too. Simply leverage send and listen on the message event
+  this.send({ event: 'update', message: queueInstance.toString() })
+}
+
+function handleOffer() {
+
+}
+
+function handleAnswer() {
+
+}
+
+function handleCandidate() {
+
+}
+/**
+ * 判断是否在通话当中
+ * setTimeout ping 60s, 否则抛出错误
+ * @param {*} socket
+ * @param {*} uuid
+ */
+function handleCall(socket, uuid) {
+  const connectedUser = queueInstance.findByUuid(uuid)
+  const customUser = queueInstance.findBySocket(socket)
+  try {
+    connectedUser.socket.send({ event: 'call', message: customUser._uuid })
+  } catch (err) {
+    socket.send({ event: 'reject', message: RTCTYPE_5003 })
+  }
+
+  try {
+    customUser.calling = true // 在通话状态
+    roomInstance.push(customUser) // 加入通话房间
+  } catch (err) {
+    socket.send({ event: 'reject', message: RTCTYPE_5001 })
+  }
+}
+
+function handleAccept(socket, uuid) {
+  const connectedUser = queueInstance.findByUuid(uuid)
+  const customUser = queueInstance.findBySocket(socket)
+  if (connectedUser.calling) {
+    connectedUser.socket.send({ event: 'accept', message: customUser._uuid })
+
+    roomInstance.push(customUser) // 加入通话房间
+
+    // 在各自信息中缓存对方的信息
+    customUser.setConnectedUser(connectedUser)
+    connectedUser.setConnectedUser(customUser)
+  } else {
+    socket.send({ event: 'reject', message: RTCTYPE_5002 })
+  }
+}
+
+function handleReject() {
+
+}
+
+function handleLeave() {
+
 }
 
 module.exports = function(server) {
@@ -49,7 +121,7 @@ module.exports = function(server) {
     serveClient: false,
     // below are engine.IO options
     pingInterval: 10000,
-    pingTimeout: 5000,
+    pingTimeout: 10000,
     cookie: false
   })
 
@@ -58,7 +130,7 @@ module.exports = function(server) {
       const { name } = socket.handshake.query
       if (name) {
         try {
-          if (!queueInstance.checckUnique(name)) {
+          if (!queueInstance.checckUniqueByName(name)) {
             throw new Error('用户名重复')
           }
         } catch (err) {
@@ -74,28 +146,44 @@ module.exports = function(server) {
   io
     .of('/chat')
     .on('connection', function(socket) {
+      const self = this
       const { name } = socket.handshake.query
       try {
         queueInstance.push(new WebrtcUer(name, socket))
       } catch (err) {
         throw new Error(err)
       }
-      // If you just want the WebSocket semantics, you can do that too. Simply leverage send and listen on the message event
-      this.send({ event: 'update', message: queueInstance.toString() })
+
+      handleUpdate.bind(self)()
 
       socket
         .on('message', (data) => {
-          const { event, message } = data
-          handleMessage(eventType[event], message)
+          const _data = JSON.parse(data)
+          const { event, message } = _data
+          try {
+            handleMessage(eventType[event], message, socket)
+          } catch (err) {
+            console.log(err)
+          }
         })
         .on('disconnect', (reason) => {
-          const { name } = socket.handshake.query
           try {
-            const del = queueInstance.deleteByname(name)
-            const ms = new Date() - new Date(del.time)
-            console.log(
-              chalk(`Delete ${del.username} from Queue for ${ms}ms`)
-            )
+            const del = queueInstance.deleteBySocket(socket)
+
+            if (del.calling) {
+              roomInstance.deleteBySocket(socket)
+
+              const { connectedUser } = del
+              // 判断是否有对方信息
+              if (connectedUser) {
+                const otherSocket = connectedUser.socket
+                roomInstance.deleteBySocket(otherSocket)
+                // 如果正在通话中，告诉对方已经离开
+                otherSocket.send({ event: 'leave', message: reason })
+              }
+            }
+
+            handleUpdate.bind(self)()
           } catch (err) {
             console.log(err)
           }
@@ -103,8 +191,6 @@ module.exports = function(server) {
         .on('error', (error) => {
           console.log(error)
         })
-    })
-    .on('disconnect', (socket) => {
     })
 }
 
