@@ -31,6 +31,8 @@ function uuid(len, radix) {
   return uuid.join('')
 }
 
+const connectedUser = Symbol('other')
+
 class WebrtcUer {
   constructor(username, socket) {
     if (typeof username === 'undefined') {
@@ -46,8 +48,13 @@ class WebrtcUer {
     this._uuid = uuid()
   }
 
-  setConnectedUser(socket) {
-    this.connectedUser = socket
+  setConnectedUser(user) {
+    this[connectedUser] = user
+    return true
+  }
+
+  getConnectedUser() {
+    return this[connectedUser]
   }
 
   toString() {
