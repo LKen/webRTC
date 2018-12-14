@@ -32,6 +32,8 @@ function uuid(len, radix) {
 }
 
 const connectedUser = Symbol('other')
+const waiting = Symbol('waiting')
+const timeout = 1000 * 60
 
 class WebrtcUer {
   constructor(username, socket) {
@@ -45,7 +47,19 @@ class WebrtcUer {
     this.time = Date.now() // 加入的时间
     this.calling = false // 是否在忙线
     this.socket = socket
-    this._uuid = uuid()
+    // this.__uuid = uuid()
+    this[waiting] = null // 时间标志：60s 通话拨打存活时间
+
+    Object.defineProperty(this, '__uuid', {
+      configurable: false,
+      enumerable: true,
+      writable: false,
+      value: uuid()
+    })
+  }
+
+  get uuid() {
+    return this.__uuid
   }
 
   setConnectedUser(user) {
@@ -55,6 +69,48 @@ class WebrtcUer {
 
   getConnectedUser() {
     return this[connectedUser]
+  }
+
+  recover() {
+    this.calling = false
+    this.setConnectedUser(null)
+  }
+
+  /**
+   * 通话拨打 - 呼叫等候逻辑判断
+   * @param {Boolean} bool
+   */
+  setWaiting(bool) {
+    const flag = this[waiting]
+    if (bool) {
+      try {
+        const socket = this.socket
+        const self = this
+        if (flag) {
+          clearTimeout(flag)
+        }
+        this[waiting] = setTimeout(
+          () => {
+            const connectedUser = self.getConnectedUser()
+            if (!connectedUser || !connectedUser.calling) {
+              self.recover()
+              console.log(`Call waiting ended in ${timeout}s, no response`)
+              socket.send({ event: 'reject', message: 5007 })
+            }
+            this[waiting] = null // recover
+          },
+          timeout
+        )
+      } catch (err) {
+        console.log(err)
+      }
+    } else {
+      if (flag) {
+        clearTimeout(flag)
+        console.log(`Call waiting ended`)
+      }
+      this[waiting] = null // recover
+    }
   }
 
   toString() {

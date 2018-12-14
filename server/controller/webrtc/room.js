@@ -41,7 +41,7 @@ class Room extends Array {
     }
     const self = this
     return !self.some(item => {
-      if (item._uuid === uuid) {
+      if (item.uuid === uuid) {
         return true
       }
       return false
@@ -51,8 +51,8 @@ class Room extends Array {
 
 Room.prototype.push = function(args) {
   if (args instanceof Object) {
-    const { _uuid, username, time } = args
-    if (this.checckUniqueByUuid(_uuid)) {
+    const { uuid, username, time } = args
+    if (this.checckUniqueByUuid(uuid)) {
       Array.prototype.push.call(this, args)
       const ms = new Date() - new Date(time)
       console.log(

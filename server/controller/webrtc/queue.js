@@ -47,7 +47,7 @@ class Queue extends Array {
 
     const self = this
     const find = self.filter(item => {
-      if (item._uuid === uuid) {
+      if (item.uuid === uuid) {
         return true
       }
       return false
@@ -108,7 +108,7 @@ class Queue extends Array {
     }
     const self = this
     return !self.some(item => {
-      if (item._uuid === uuid) {
+      if (item.uuid === uuid) {
         return true
       }
       return false
@@ -118,7 +118,7 @@ class Queue extends Array {
   toString() {
     const self = this
     return self.map(item => {
-      const { username: label, _uuid: value } = item
+      const { username: label, uuid: value } = item
       return { label, value }
     })
   }
@@ -126,8 +126,8 @@ class Queue extends Array {
 
 Queue.prototype.push = function(args) {
   if (args instanceof Object) {
-    const { _uuid, username, time } = args
-    if (this.checckUniqueByUuid(_uuid)) {
+    const { uuid, username, time } = args
+    if (this.checckUniqueByUuid(uuid)) {
       Array.prototype.push.call(this, args)
       console.log(
         chalk.cyan(`Welcome  "${username}"  join in the webrtc, at ${moment(time).format('YYYY-MM-DD hH:mm:ss a')}`)
