@@ -74,6 +74,7 @@ class WebrtcUer {
   recover() {
     this.calling = false
     this.setConnectedUser(null)
+    this.setWaiting(false)
   }
 
   /**
