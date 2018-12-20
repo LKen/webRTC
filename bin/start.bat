@@ -1,0 +1,1 @@
+pm2 stop www & cmd /k pm2 start ./www

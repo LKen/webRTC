@@ -1,0 +1,1 @@
+npm install && npm install -g pm2 && cmd /k pm2 update

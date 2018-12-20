@@ -1,0 +1,1 @@
+cmd /k pm2 monit
